@@ -9,14 +9,9 @@ using TODOAPI.Models;
 
 namespace TODOAPI.Services
 {
-    public class TodoService : ITodoService
+    public class TodoService(ApplicationDbContext context) : ITodoService
     {
-        private readonly ApplicationDbContext _context;
-
-        public TodoService(ApplicationDbContext context)
-        {
-            _context = context;
-        }
+        private readonly ApplicationDbContext _context = context;
 
         public async Task<IEnumerable<TodoResponseDto>> GetAllTodosAsync(int page = 1, int pageSize = 10)
         {
@@ -51,9 +46,8 @@ namespace TODOAPI.Services
                 Title = todoDto.Title,
                 Description = todoDto.Description,
                 CreatedAt = DateTime.UtcNow,
-                Deadline = todoDto.Deadline,
-                Priority = (Priority)Enum.Parse(typeof(Priority), todoDto.Priority),
-                Category = (Category)Enum.Parse(typeof(Category), todoDto.Category),
+                Priority = todoDto.Priority,
+                Category = todoDto.Category,
                 Status = TodoStatus.ToDo
             };
 
@@ -81,9 +75,8 @@ namespace TODOAPI.Services
 
             todo.Title = todoDto.Title;
             todo.Description = todoDto.Description;
-            todo.Deadline = todoDto.Deadline;
-            todo.Priority = (Priority)Enum.Parse(typeof(Priority), todoDto.Priority);
-            todo.Category = (Category)Enum.Parse(typeof(Category), todoDto.Category);
+            todo.Priority = todoDto.Priority;
+            todo.Category = todoDto.Category;
 
             await _context.SaveChangesAsync();
             return MapToDto(todo);
@@ -121,6 +114,14 @@ namespace TODOAPI.Services
         {
             return await _context.Todos
                 .Where(t => t.Priority == priority)
+                .Select(t => MapToDto(t))
+                .ToListAsync();
+        }
+
+        public async Task<IEnumerable<TodoResponseDto>> GetTodosByStatusAsync(TodoStatus status)
+        {
+            return await _context.Todos
+                .Where(t => t.Status == status)
                 .Select(t => MapToDto(t))
                 .ToListAsync();
         }

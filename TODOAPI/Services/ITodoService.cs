@@ -15,5 +15,6 @@ namespace TODOAPI.Services
         Task<bool> UpdateTodoStatusAsync(int id, TodoStatus status);
         Task<IEnumerable<TodoResponseDto>> GetTodosByCategoryAsync(Category category);
         Task<IEnumerable<TodoResponseDto>> GetTodosByPriorityAsync(Priority priority);
+        Task<IEnumerable<TodoResponseDto>> GetTodosByStatusAsync(TodoStatus status);
     }
 }

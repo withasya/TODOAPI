@@ -9,14 +9,9 @@ namespace TODOAPI.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    public class TodoController : ControllerBase
+    public class TodoController(ITodoService todoService) : ControllerBase
     {
-        private readonly ITodoService _todoService;
-
-        public TodoController(ITodoService todoService)
-        {
-            _todoService = todoService;
-        }
+        private readonly ITodoService _todoService = todoService;
 
         [HttpGet]
         public async Task<ActionResult<IEnumerable<TodoResponseDto>>> GetAll([FromQuery] int page = 1, [FromQuery] int pageSize = 10)
@@ -33,9 +28,18 @@ namespace TODOAPI.Controllers
             return Ok(todo);
         }
 
+
         [HttpPost]
-        public async Task<ActionResult<TodoResponseDto>> Create(CreateTodoDto todoDto)
+        public async Task<ActionResult<TodoResponseDto>> Create(
+            [FromQuery] Priority priority,   // Enum olarak tanımlandı
+            [FromQuery] Category category,   // Enum olarak tanımlandı
+            [FromBody] CreateTodoDto todoDto
+        )
         {
+            // Enum'ları CreateTodoDto içinde almak
+            todoDto.Priority = priority;    // Enum değerini alıyoruz
+            todoDto.Category = category;    // Enum değerini alıyoruz
+
             try
             {
                 var todo = await _todoService.CreateTodoAsync(todoDto);
@@ -46,6 +50,8 @@ namespace TODOAPI.Controllers
                 return BadRequest(ex.Message);
             }
         }
+
+
 
         [HttpPut("{id}")]
         public async Task<ActionResult<TodoResponseDto>> Update(int id, CreateTodoDto todoDto)
@@ -71,11 +77,13 @@ namespace TODOAPI.Controllers
         }
 
         [HttpPatch("{id}/status")]
-        public async Task<ActionResult> UpdateStatus(int id, [FromBody] UpdateTodoStatusDto statusDto)
+        public async Task<ActionResult> UpdateStatus(int id, [FromQuery] UpdateTodoStatusDto statusDto)
         {
             var result = await _todoService.UpdateTodoStatusAsync(id, statusDto.Status);
             if (!result) return NotFound();
-            return NoContent();
+
+            // Başarılı olduğunda kullanıcıya bir başarı mesajı döndür
+            return Ok(new { message = "Status successfully updated." });
         }
 
         [HttpGet("category/{category}")]
@@ -89,6 +97,14 @@ namespace TODOAPI.Controllers
         public async Task<ActionResult<IEnumerable<TodoResponseDto>>> GetByPriority(Priority priority)
         {
             var todos = await _todoService.GetTodosByPriorityAsync(priority);
+            return Ok(todos);
+        }
+
+
+        [HttpGet("status/{status}")]
+        public async Task<ActionResult<IEnumerable<TodoResponseDto>>> GetByStatus(TodoStatus status)
+        {
+            var todos = await _todoService.GetTodosByStatusAsync(status);
             return Ok(todos);
         }
     }
